@@ -1,6 +1,8 @@
 package psp03_tarea01;
 
-public class Mensaje {
+import java.io.Serializable;
+
+public class Mensaje implements Serializable{
 
     private String name;
     private String texto;

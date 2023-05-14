@@ -40,7 +40,7 @@ public class Cliente extends JFrame implements ActionListener {
         textarea = new JTextArea();
         scroll = new JScrollPane(textarea);
         add(scroll,
-                addConstraints(0, 1,1, 2, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
+                addConstraints(0, 1, 1, 2, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
                         1.0, 2.0));
 
         salir.addActionListener(this);
@@ -53,6 +53,7 @@ public class Cliente extends JFrame implements ActionListener {
         socket = s;
         System.out.println(s.getPort());
         this.nombre = nombre;
+        
         try {
             fentrada = new ObjectInputStream(socket.getInputStream());
         } catch (IOException ioe) {
@@ -92,11 +93,11 @@ public class Cliente extends JFrame implements ActionListener {
     }
 
     public void ejecutar() {
-        String texto = "";
+        Mensaje texto;
         while (repetir) {
             try {
-                texto = (String) fentrada.readObject();
-                textarea.setText(texto);
+                texto = (Mensaje) fentrada.readObject();
+                textarea.setText(texto.getTexto());
 
             } catch (IOException ioe) {
                 System.out.println("Servidor cerrado");
@@ -114,10 +115,16 @@ public class Cliente extends JFrame implements ActionListener {
 
     @Override
     public void actionPerformed(ActionEvent e) {
+        try {
+            fsalida = new ObjectOutputStream(socket.getOutputStream());
+        } catch (IOException ioe) {
+            System.out.println("ERROR:\n" + ioe.getMessage());
+        }
         if (e.getSource().equals(salir)) {
             try {
                 fsalida.writeObject(new Mensaje(nombre, "exit"));
                 repetir = false;
+                System.exit(0);
             } catch (IOException ioe) {
                 System.out.println("ERROR:\n" + ioe.getMessage());
             }

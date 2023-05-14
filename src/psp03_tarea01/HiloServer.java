@@ -23,7 +23,7 @@ public class HiloServer extends Thread{
     public void run() {
         Servidor.numJugadores.setText("NUMERO DE JUGADORES: " + Servidor.jugadores);
         String text = Servidor.textarea.getText();
-        EnviarMensaje(text);
+        EnviarMensaje(new Mensaje("Servidor",text));
 
         while (true) {
             int respuesta = 0;
@@ -51,7 +51,7 @@ public class HiloServer extends Thread{
 
                     Servidor.textarea.append(String.valueOf(mensaje.getName() + " -> " + respuesta) + "\n");
                     text = Servidor.textarea.getText();
-                    EnviarMensaje(text);
+                    EnviarMensaje(new Mensaje("Servidor",text));
 
                 }
             } catch (IOException ioe) {
@@ -63,13 +63,13 @@ public class HiloServer extends Thread{
         }
     }
 
-    private void EnviarMensaje(String msg) {
+    private void EnviarMensaje(Mensaje msg) {
 
         for (int i = 0; i < Servidor.tabla.size(); i++) {
             Socket s1 = Servidor.tabla.get(i);
             try {
-                DataOutputStream fsalida = new DataOutputStream(s1.getOutputStream());
-                fsalida.writeUTF(msg);
+                ObjectOutputStream fsalida = new ObjectOutputStream(s1.getOutputStream());
+                fsalida.writeObject(msg);
             } catch (SocketException se) {
                 System.out.println("ERROR:\n" + se.getMessage());
             } catch (IOException ioe) {
