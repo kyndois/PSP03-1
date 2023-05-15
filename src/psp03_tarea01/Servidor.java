@@ -9,9 +9,12 @@ import java.awt.GridLayout;
 import java.awt.Insets;
 import java.awt.event.*;
 import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.net.*;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.*;
 
 public class Servidor extends JFrame implements ActionListener {
@@ -21,7 +24,7 @@ public class Servidor extends JFrame implements ActionListener {
     static ServerSocket servidor;
     static final int PUERTO = 2000;
     static final int NUMERO = (int) (Math.random() * 100);
-    static int CONEXION = 0;
+    static int INTENTOS = 0;
     static int jugadores = 0;
 
     static JLabel number = new JLabel(String.valueOf(NUMERO));
@@ -32,8 +35,9 @@ public class Servidor extends JFrame implements ActionListener {
     static JTextArea textarea;
     static JPanel textarea2;
     JButton salir = new JButton("Salir");
-    static ArrayList<Socket> tabla = new ArrayList<>();
-    static ArrayList<String> listajugadores = new ArrayList<>();
+    static Socket[] tabla = new Socket[100];
+    static Object[][] tablacoms = new Object[100][100];
+    static ArrayList<Jugador> listajugadores = new ArrayList<>();
 
     public Servidor() {
         super("SERVIDOR");
@@ -42,7 +46,7 @@ public class Servidor extends JFrame implements ActionListener {
         setLayout(new GridBagLayout());
 
         numJugadores.setEditable(false);
-        numJugadores.setText("NUMERO DE JUGADORES: " + CONEXION);
+        numJugadores.setText("NUMERO DE INTENTOS: " + INTENTOS);
         add(numJugadores,
                 addConstraints(0, 0, 1, 1, GridBagConstraints.NORTH, GridBagConstraints.HORIZONTAL,
                         1.0, 0.0));
@@ -89,6 +93,7 @@ public class Servidor extends JFrame implements ActionListener {
 
         while (true) {
             Socket s = new Socket();
+
             try {
                 s = servidor.accept();
 
@@ -97,8 +102,6 @@ public class Servidor extends JFrame implements ActionListener {
                 break;
             }
 
-            tabla.add(s);
-            CONEXION++;
             jugadores++;
             HiloServer hilo = new HiloServer(s);
             hilo.start();
@@ -124,39 +127,55 @@ public class Servidor extends JFrame implements ActionListener {
         }
     }
 
-    public static void nuevoJugador(String s) {
-        int repetido = 0;
-        for (String s1 : listajugadores) {
-            if (s == s1) {
-                repetido++;
+    public static void nuevoJugador(String s, Socket o) {
+        try {
+            ObjectOutputStream oos = new ObjectOutputStream(o.getOutputStream());
+            Jugador jugador = new Jugador(s, oos);
+
+            int repetido = 0;
+            for (Jugador s1 : listajugadores) {
+                if (s == s1.getName()) {
+                    repetido++;
+                }
             }
+            if (repetido != 0) {
+                s = s.concat(" " + String.valueOf(repetido));
+            }
+            jugador.setName(s);
+            listajugadores.add(jugador);
+            actualizarLista();
+        } catch (IOException ioe) {
+            System.out.println("ERROR:\n" + ioe.getMessage());
         }
-        if (repetido != 0) {
-            s = s.concat(" " + String.valueOf(repetido));
-        }
-        listajugadores.add(s);
-        actualizarLista();
     }
 
-    public static void saleJugador(String s) {
+    public static void saleJugador(String s1) {
         Iterator it = listajugadores.iterator();
-        String name="";
-        while(it.hasNext()){
-             name = (String)it.next();
-            if(name.equals(s)){
+        Jugador jugador;
+        while (it.hasNext()) {
+            jugador = (Jugador) it.next();
+            String name = jugador.getName();
+            if (name.equals(s1)) {
+                try {
+                    jugador.getStream().close();
+                } catch (IOException ex) {
+                    System.out.println("loquenado");
+                }
                 it.remove();
                 break;
             }
+            System.out.println("Ohosdg");
         }
+        jugadores--;
         actualizarLista();
     }
 
     public static void actualizarLista() {
         jugadoresActivos.removeAll();
-        jugadoresActivos.add(new JLabel("JUGADORES: "+ jugadores));
+        jugadoresActivos.add(new JLabel("JUGADORES: " + jugadores));
         jugadoresActivos.add(new JLabel("--------------------------"));
-        for (String s : listajugadores) {
-            jugadoresActivos.add(new JLabel(s));
+        for (Jugador s : listajugadores) {
+            jugadoresActivos.add(new JLabel(s.getName()));
         }
         jugadoresActivos.repaint();
     }
@@ -165,14 +184,14 @@ public class Servidor extends JFrame implements ActionListener {
         jugadoresActivos.removeAll();
         jugadoresActivos.add(new JLabel("JUGADORES:"));
         jugadoresActivos.add(new JLabel("--------------------------"));
-        for (String s : listajugadores) {
+        for (Jugador s : listajugadores) {
             if (s.equals(name)) {
                 JLabel winner = new JLabel(name);
                 winner.setForeground(Color.WHITE);
                 winner.setOpaque(true);
                 winner.setBackground(Color.red);
             } else {
-                jugadoresActivos.add(new JLabel(s));
+                jugadoresActivos.add(new JLabel(s.getName()));
             }
         }
         jugadoresActivos.repaint();

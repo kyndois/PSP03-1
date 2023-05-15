@@ -5,8 +5,6 @@ import java.awt.event.*;
 import java.io.*;
 import java.net.*;
 import java.util.ArrayList;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.swing.*;
 
 public class Cliente extends JFrame implements ActionListener {
@@ -32,7 +30,7 @@ public class Cliente extends JFrame implements ActionListener {
         super("JUGADOR: " + nombre);
         setSize(800, 600);
         setVisible(true);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        addWindowListener(exitListener);
         setLayout(new GridBagLayout());
         socket = s;
         this.nombre = nombre;
@@ -113,10 +111,7 @@ public class Cliente extends JFrame implements ActionListener {
 
         while (repetir) {
             try {
-
-                System.out.println("Estela es tonta");
                 texto = (Mensaje) fentrada.readObject();
-                System.out.println(texto.getTipo());
                 if (texto.getTipo().equals("historial")) {
                     textarea.selectAll();
                     textarea.replaceSelection("");
@@ -163,12 +158,26 @@ public class Cliente extends JFrame implements ActionListener {
         }
         jugadoresActivos.repaint();
     }
+    WindowListener exitListener = new WindowAdapter() {
+
+        @Override
+        public void windowClosing(WindowEvent e) {
+            try {
+                msg = new Mensaje("exit", nombre);
+                fsalida.writeObject(msg);
+                repetir = false;
+
+            } catch (IOException ioe) {
+                System.out.println("ERROR:\n" + ioe.getMessage());
+            }
+        }
+    };
 
     @Override
     public void actionPerformed(ActionEvent e) {
         if (e.getSource().equals(salir)) {
             try {
-                msg = new Mensaje("exit", nombre);
+                msg = new Mensaje("exit", this.nombre);
                 fsalida.writeObject(msg);
                 repetir = false;
 
