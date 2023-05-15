@@ -42,7 +42,7 @@ public class Servidor extends JFrame implements ActionListener {
         setLayout(new GridBagLayout());
 
         numJugadores.setEditable(false);
-        numJugadores.setText("NUMERO DE JUGADORES: " + jugadores);
+        numJugadores.setText("NUMERO DE JUGADORES: " + CONEXION);
         add(numJugadores,
                 addConstraints(0, 0, 1, 1, GridBagConstraints.NORTH, GridBagConstraints.HORIZONTAL,
                         1.0, 0.0));
@@ -141,7 +141,8 @@ public class Servidor extends JFrame implements ActionListener {
     public static void saleJugador(String s) {
         Iterator it = listajugadores.iterator();
         while(it.hasNext()){
-            if(it.next().equals(s)){
+            String name = (String)it.next();
+            if(name.equals(s)){
                 it.remove();
             }
         }
@@ -150,7 +151,7 @@ public class Servidor extends JFrame implements ActionListener {
 
     public static void actualizarLista() {
         jugadoresActivos.removeAll();
-        jugadoresActivos.add(new JLabel("JUGADORES:"));
+        jugadoresActivos.add(new JLabel("JUGADORES: "+ jugadores));
         jugadoresActivos.add(new JLabel("--------------------------"));
         for (String s : listajugadores) {
             jugadoresActivos.add(new JLabel(s));

@@ -4,10 +4,11 @@ import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
 import java.net.*;
+import java.util.ArrayList;
 import javax.swing.*;
 
 public class Cliente extends JFrame implements ActionListener {
-
+    Mensaje msg;
     Socket socket = null;
     GridBagConstraints gbc;
     ObjectInputStream fentrada;
@@ -15,10 +16,13 @@ public class Cliente extends JFrame implements ActionListener {
     String nombre;
     static JTextField mensaje = new JTextField();
     private JScrollPane scroll;
+    private JScrollPane scroll2;
     static JTextArea textarea;
+    static JPanel jugadoresActivos;
     JButton enviar = new JButton("Enviar");
     JButton salir = new JButton("Salir");
     boolean repetir = true;
+    ArrayList<String> listajugadores = new ArrayList<>();
 
     public Cliente(Socket s, String nombre) {
 
@@ -27,6 +31,29 @@ public class Cliente extends JFrame implements ActionListener {
         setVisible(true);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new GridBagLayout());
+        socket = s;
+        System.out.println(s.getPort());
+        this.nombre = nombre;
+
+        jugadoresActivos = new JPanel();
+        jugadoresActivos.setLayout(new BoxLayout(jugadoresActivos, BoxLayout.Y_AXIS));
+        scroll2 = new JScrollPane(jugadoresActivos);
+        try {
+            fsalida = new ObjectOutputStream(socket.getOutputStream());
+        } catch (IOException ioe) {
+            System.out.println("ERROR:\n" + ioe.getMessage());
+        }
+        try {
+            msg = new Mensaje("enter", nombre);
+            fsalida.writeObject(msg);
+        } catch (IOException ioe) {
+            System.out.println("ERROR:\n" + ioe.getMessage());
+        }
+        try {
+            fentrada = new ObjectInputStream(socket.getInputStream());
+        } catch (IOException ioe) {
+            System.out.println("ERROR:\n" + ioe.getMessage());
+        }
 
         add(mensaje,
                 addConstraints(0, 0, 1, 1, GridBagConstraints.NORTH, GridBagConstraints.HORIZONTAL,
@@ -40,7 +67,7 @@ public class Cliente extends JFrame implements ActionListener {
         textarea = new JTextArea();
         scroll = new JScrollPane(textarea);
         add(scroll,
-                addConstraints(0, 1, 1, 2, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
+                addConstraints(0, 1, 1, 3, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
                         1.0, 2.0));
 
         salir.addActionListener(this);
@@ -49,33 +76,24 @@ public class Cliente extends JFrame implements ActionListener {
                 addConstraints(1, 1, 1, 1, GridBagConstraints.NORTH, GridBagConstraints.NONE,
                         0.0, 0.0));
 
+        add(jugadoresActivos,
+                addConstraints(1, 2, 1, 1, GridBagConstraints.NORTH, GridBagConstraints.NONE,
+                        0.0, 0.0));
+
         repaint();
-        socket = s;
-        System.out.println(s.getPort());
-        this.nombre = nombre;
-        
-        try {
-            fentrada = new ObjectInputStream(socket.getInputStream());
-        } catch (IOException ioe) {
-            System.out.println("ERROR:\n" + ioe.getMessage());
-        }
-        try {
-            fsalida = new ObjectOutputStream(socket.getOutputStream());
-        } catch (IOException ioe) {
-            System.out.println("ERROR:\n" + ioe.getMessage());
-        }
-        try {
-            fsalida.writeObject(new Mensaje(nombre, "enter"));
-        } catch (IOException ioe) {
-            System.out.println("ERROR:\n" + ioe.getMessage());
-        }
 
     }
 
     public static void main(String[] args) {
         int puerto = 2000;
-        String nombre = JOptionPane.showInputDialog("Introduce tu nombre para participar:");
+        String nombre = "";
         Socket s = null;
+        do {
+            nombre = JOptionPane.showInputDialog("Introduce tu nombre para participar:");
+            if (nombre.length() < 4 || nombre.length() > 10) {
+                JOptionPane.showMessageDialog(null, "Debe escribir un nombre con un mínimo de 4 letras y un máximo de 10", "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        } while (nombre.length() < 4 || nombre.length() > 10);
 
         try {
             s = new Socket("localhost", puerto);
@@ -86,6 +104,7 @@ public class Cliente extends JFrame implements ActionListener {
 
         if (!nombre.trim().equals("")) {
             Cliente cliente = new Cliente(s, nombre);
+            cliente.setVisible(true);
             cliente.ejecutar();
         } else {
             System.out.println("Nombre vacio");
@@ -97,13 +116,30 @@ public class Cliente extends JFrame implements ActionListener {
         while (repetir) {
             try {
                 texto = (Mensaje) fentrada.readObject();
-                textarea.setText(texto.getTexto());
+                if (texto.getTipo().equals("historial")) {
+                    textarea.removeAll();
+                    textarea.append(texto.getTexto());
+                }
+                if (texto.getTipo().equals("jugadores")) {
+                    listajugadores = texto.getLista();
+                    actualizarLista();
+                }
+                if (texto.getTipo().equals("winner")) {
+                    listajugadores = texto.getLista();
+                    actualizarLista();
+                }
 
             } catch (IOException ioe) {
                 System.out.println("Servidor cerrado");
             } catch (ClassNotFoundException cnfe) {
-                System.out.println("ERROR:\n" + cnfe.getMessage());
+                System.out.println("ERROR DE CLASE:\n" + cnfe.getMessage());
             }
+        }
+        try{
+            socket.close();
+            System.exit(0);
+        }catch (IOException ioe){
+            System.out.println("ERROR\n" + ioe.getMessage());
         }
     }
 
@@ -113,29 +149,50 @@ public class Cliente extends JFrame implements ActionListener {
         return gbc;
     }
 
+    public void actualizarLista() {
+        jugadoresActivos.removeAll();
+        jugadoresActivos.add(new JLabel("JUGADORES: " + listajugadores.size()));
+        jugadoresActivos.add(new JLabel("--------------------------"));
+        for (String s : listajugadores) {
+            jugadoresActivos.add(new JLabel(s));
+        }
+        jugadoresActivos.repaint();
+    }
+
     @Override
     public void actionPerformed(ActionEvent e) {
-        try {
-            fsalida = new ObjectOutputStream(socket.getOutputStream());
-        } catch (IOException ioe) {
-            System.out.println("ERROR:\n" + ioe.getMessage());
-        }
         if (e.getSource().equals(salir)) {
             try {
-                fsalida.writeObject(new Mensaje(nombre, "exit"));
+                msg = new Mensaje("exit", nombre);
+                fsalida.writeObject(msg);
                 repetir = false;
-                System.exit(0);
+                fsalida.close();
+                fentrada.close();
+
             } catch (IOException ioe) {
                 System.out.println("ERROR:\n" + ioe.getMessage());
             }
-        } else {
+        }
+        if (e.getSource().equals(enviar)) {
+            int respuesta = -1;
             try {
-                mensaje.setText("");
-                fsalida.writeObject(new Mensaje(nombre, mensaje.getText()));
-            } catch (IOException ioe) {
-                System.out.println("ERROR:\n" + ioe.getMessage());
+                respuesta = Integer.valueOf(mensaje.getText());
+                if (respuesta < 0 || respuesta > 100) {
+                    throw new Exception();
+                }
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(null, "La respuesta debe ser un número del 0 al 100", "ERROR", JOptionPane.ERROR_MESSAGE);
+            }
+            mensaje.setText("");
+            if (respuesta != -1) {
+                try {
+                    msg = new Mensaje(nombre, respuesta);
+                    fsalida.writeObject(msg);
+                } catch (IOException ioe) {
+                    System.out.println("ERROR:\n" + ioe.getMessage());
+
+                }
             }
         }
     }
-
 }

@@ -3,9 +3,9 @@ package psp03_tarea01;
 import java.awt.Color;
 import java.io.*;
 import java.net.*;
+import javax.swing.JTextArea;
 
-
-public class HiloServer extends Thread{
+public class HiloServer extends Thread {
 
     Mensaje mensaje;
     ObjectInputStream fentrada;
@@ -23,7 +23,7 @@ public class HiloServer extends Thread{
     public void run() {
         Servidor.numJugadores.setText("NUMERO DE JUGADORES: " + Servidor.jugadores);
         String text = Servidor.textarea.getText();
-        EnviarMensaje(new Mensaje("Servidor",text));
+        EnviarMensaje();
 
         while (true) {
             int respuesta = 0;
@@ -31,15 +31,15 @@ public class HiloServer extends Thread{
             try {
                 mensaje = (Mensaje) fentrada.readObject();
 
-                if (mensaje.getTexto().equals("enter")) {
-                    Servidor.nuevoJugador(mensaje.getName());
-                    Servidor.textarea.append("**** El jugador " + mensaje.getName() + " ha entrado al juego ****\n");
-                } 
-                else if (mensaje.getTexto().equals("exit")) {
-                    Servidor.saleJugador(mensaje.getName());
-                    Servidor.textarea.append("**** El jugador " + mensaje.getName() + " ha salido del juego ****\n");
-                } 
-                else {
+                if (mensaje.getTipo().equals("enter")) {
+                    Servidor.nuevoJugador(mensaje.getTexto());
+                    Servidor.textarea.append("**** El jugador " + mensaje.getTexto() + " ha entrado al juego ****\n");
+                    EnviarMensaje();
+                } else if (mensaje.getTipo().equals("exit")) {
+                    Servidor.saleJugador(mensaje.getTexto());
+                    Servidor.textarea.append("**** El jugador " + mensaje.getTexto() + " ha salido del juego ****\n");
+                    EnviarMensaje();
+                } else {
                     respuesta = mensaje.getRespuesta();
 
                     if (respuesta == Servidor.NUMERO) {
@@ -48,12 +48,10 @@ public class HiloServer extends Thread{
                         Servidor.winner(mensaje.getName());
                         break;
                     }
-
-                    Servidor.textarea.append(String.valueOf(mensaje.getName() + " -> " + respuesta) + "\n");
-                    text = Servidor.textarea.getText();
-                    EnviarMensaje(new Mensaje("Servidor",text));
-
+                    EnviarMensaje();
+                    Servidor.textarea.append(mensaje.getName() + " -> " + respuesta + "\n");
                 }
+
             } catch (IOException ioe) {
                 System.out.println("ERROR:\n" + ioe.getMessage());
             } catch (ClassNotFoundException cnfe) {
@@ -63,13 +61,14 @@ public class HiloServer extends Thread{
         }
     }
 
-    private void EnviarMensaje(Mensaje msg) {
+    private void EnviarMensaje() {
 
         for (int i = 0; i < Servidor.tabla.size(); i++) {
             Socket s1 = Servidor.tabla.get(i);
             try {
                 ObjectOutputStream fsalida = new ObjectOutputStream(s1.getOutputStream());
-                fsalida.writeObject(msg);
+                mensaje = new Mensaje("historial", Servidor.textarea.getText());
+                fsalida.writeObject(mensaje);
             } catch (SocketException se) {
                 System.out.println("ERROR:\n" + se.getMessage());
             } catch (IOException ioe) {
