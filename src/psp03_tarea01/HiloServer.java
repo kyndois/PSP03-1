@@ -3,7 +3,6 @@ package psp03_tarea01;
 import java.awt.Color;
 import java.io.*;
 import java.net.*;
-import javax.swing.JTextArea;
 
 public class HiloServer extends Thread {
 
@@ -23,22 +22,23 @@ public class HiloServer extends Thread {
     public void run() {
         Servidor.numJugadores.setText("NUMERO DE JUGADORES: " + Servidor.jugadores);
         String text = Servidor.textarea.getText();
-        EnviarMensaje();
+        
 
         while (true) {
-            int respuesta = 0;
+            int respuesta = -1;
 
             try {
+                EnviarMensaje();
                 mensaje = (Mensaje) fentrada.readObject();
-
+                
                 if (mensaje.getTipo().equals("enter")) {
                     Servidor.nuevoJugador(mensaje.getTexto());
                     Servidor.textarea.append("**** El jugador " + mensaje.getTexto() + " ha entrado al juego ****\n");
-                    EnviarMensaje();
+
                 } else if (mensaje.getTipo().equals("exit")) {
                     Servidor.saleJugador(mensaje.getTexto());
                     Servidor.textarea.append("**** El jugador " + mensaje.getTexto() + " ha salido del juego ****\n");
-                    EnviarMensaje();
+
                 } else {
                     respuesta = mensaje.getRespuesta();
 
@@ -48,8 +48,13 @@ public class HiloServer extends Thread {
                         Servidor.winner(mensaje.getName());
                         break;
                     }
-                    EnviarMensaje();
                     Servidor.textarea.append(mensaje.getName() + " -> " + respuesta + "\n");
+                    if (respuesta < Servidor.NUMERO) {
+                        Servidor.textarea.append("---Servidor" + " -> " + respuesta + " es menor que el número oculto!\n");
+                    } else {
+                        Servidor.textarea.append("---Servidor" + " -> " + respuesta + " es mayor que el número oculto!\n");
+                    }
+                   
                 }
 
             } catch (IOException ioe) {
@@ -62,9 +67,7 @@ public class HiloServer extends Thread {
     }
 
     private void EnviarMensaje() {
-
-        for (int i = 0; i < Servidor.tabla.size(); i++) {
-            Socket s1 = Servidor.tabla.get(i);
+        for (Socket s1 : Servidor.tabla) {
             try {
                 ObjectOutputStream fsalida = new ObjectOutputStream(s1.getOutputStream());
                 mensaje = new Mensaje("historial", Servidor.textarea.getText());

@@ -87,7 +87,7 @@ public class Servidor extends JFrame implements ActionListener {
         Servidor display = new Servidor();
         display.setVisible(true);
 
-        while (CONEXION >= 0) {
+        while (true) {
             Socket s = new Socket();
             try {
                 s = servidor.accept();
@@ -140,10 +140,12 @@ public class Servidor extends JFrame implements ActionListener {
 
     public static void saleJugador(String s) {
         Iterator it = listajugadores.iterator();
+        String name="";
         while(it.hasNext()){
-            String name = (String)it.next();
+             name = (String)it.next();
             if(name.equals(s)){
                 it.remove();
+                break;
             }
         }
         actualizarLista();

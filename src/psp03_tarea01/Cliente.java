@@ -5,9 +5,12 @@ import java.awt.event.*;
 import java.io.*;
 import java.net.*;
 import java.util.ArrayList;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.*;
 
 public class Cliente extends JFrame implements ActionListener {
+
     Mensaje msg;
     Socket socket = null;
     GridBagConstraints gbc;
@@ -32,28 +35,11 @@ public class Cliente extends JFrame implements ActionListener {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new GridBagLayout());
         socket = s;
-        System.out.println(s.getPort());
         this.nombre = nombre;
 
         jugadoresActivos = new JPanel();
         jugadoresActivos.setLayout(new BoxLayout(jugadoresActivos, BoxLayout.Y_AXIS));
         scroll2 = new JScrollPane(jugadoresActivos);
-        try {
-            fsalida = new ObjectOutputStream(socket.getOutputStream());
-        } catch (IOException ioe) {
-            System.out.println("ERROR:\n" + ioe.getMessage());
-        }
-        try {
-            msg = new Mensaje("enter", nombre);
-            fsalida.writeObject(msg);
-        } catch (IOException ioe) {
-            System.out.println("ERROR:\n" + ioe.getMessage());
-        }
-        try {
-            fentrada = new ObjectInputStream(socket.getInputStream());
-        } catch (IOException ioe) {
-            System.out.println("ERROR:\n" + ioe.getMessage());
-        }
 
         add(mensaje,
                 addConstraints(0, 0, 1, 1, GridBagConstraints.NORTH, GridBagConstraints.HORIZONTAL,
@@ -81,6 +67,17 @@ public class Cliente extends JFrame implements ActionListener {
                         0.0, 0.0));
 
         repaint();
+
+        try {
+
+            fsalida = new ObjectOutputStream(socket.getOutputStream());
+            msg = new Mensaje("enter", nombre);
+            fsalida.writeObject(msg);
+            fentrada = new ObjectInputStream(socket.getInputStream());
+
+        } catch (IOException ioe) {
+            System.out.println("ERROR:\n" + ioe.getMessage());
+        }
 
     }
 
@@ -113,20 +110,22 @@ public class Cliente extends JFrame implements ActionListener {
 
     public void ejecutar() {
         Mensaje texto;
+
         while (repetir) {
             try {
                 texto = (Mensaje) fentrada.readObject();
+                System.out.println(texto.getTipo());
                 if (texto.getTipo().equals("historial")) {
                     textarea.removeAll();
                     textarea.append(texto.getTexto());
                 }
                 if (texto.getTipo().equals("jugadores")) {
                     listajugadores = texto.getLista();
-                    actualizarLista();
+                    actualizarLista(listajugadores);
                 }
                 if (texto.getTipo().equals("winner")) {
                     listajugadores = texto.getLista();
-                    actualizarLista();
+                    actualizarLista(listajugadores);
                 }
 
             } catch (IOException ioe) {
@@ -135,12 +134,7 @@ public class Cliente extends JFrame implements ActionListener {
                 System.out.println("ERROR DE CLASE:\n" + cnfe.getMessage());
             }
         }
-        try{
-            socket.close();
-            System.exit(0);
-        }catch (IOException ioe){
-            System.out.println("ERROR\n" + ioe.getMessage());
-        }
+
     }
 
     private GridBagConstraints addConstraints(int gridx, int gridy, int gridwidth, int gridheight, int anchor, int fill, double gridweightx, double gridweighty) {
@@ -149,11 +143,11 @@ public class Cliente extends JFrame implements ActionListener {
         return gbc;
     }
 
-    public void actualizarLista() {
+    public void actualizarLista(ArrayList<String> lista) {
         jugadoresActivos.removeAll();
-        jugadoresActivos.add(new JLabel("JUGADORES: " + listajugadores.size()));
+        jugadoresActivos.add(new JLabel("JUGADORES: " + lista.size()));
         jugadoresActivos.add(new JLabel("--------------------------"));
-        for (String s : listajugadores) {
+        for (String s : lista) {
             jugadoresActivos.add(new JLabel(s));
         }
         jugadoresActivos.repaint();
@@ -166,9 +160,14 @@ public class Cliente extends JFrame implements ActionListener {
                 msg = new Mensaje("exit", nombre);
                 fsalida.writeObject(msg);
                 repetir = false;
-                fsalida.close();
-                fentrada.close();
-
+                try {
+                    fsalida.close();
+                    fentrada.close();
+                    socket.close();
+                    System.exit(0);
+                } catch (IOException ioe) {
+                    System.out.println("ERROR\n" + ioe.getMessage());
+                }
             } catch (IOException ioe) {
                 System.out.println("ERROR:\n" + ioe.getMessage());
             }
@@ -176,18 +175,20 @@ public class Cliente extends JFrame implements ActionListener {
         if (e.getSource().equals(enviar)) {
             int respuesta = -1;
             try {
-                respuesta = Integer.valueOf(mensaje.getText());
+                respuesta = Integer.parseInt(mensaje.getText());
                 if (respuesta < 0 || respuesta > 100) {
                     throw new Exception();
                 }
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(null, "La respuesta debe ser un número del 0 al 100", "ERROR", JOptionPane.ERROR_MESSAGE);
+                respuesta = -1;
             }
             mensaje.setText("");
             if (respuesta != -1) {
                 try {
                     msg = new Mensaje(nombre, respuesta);
                     fsalida.writeObject(msg);
+
                 } catch (IOException ioe) {
                     System.out.println("ERROR:\n" + ioe.getMessage());
 
