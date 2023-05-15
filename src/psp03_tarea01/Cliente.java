@@ -113,10 +113,13 @@ public class Cliente extends JFrame implements ActionListener {
 
         while (repetir) {
             try {
+
+                System.out.println("Estela es tonta");
                 texto = (Mensaje) fentrada.readObject();
                 System.out.println(texto.getTipo());
                 if (texto.getTipo().equals("historial")) {
-                    textarea.removeAll();
+                    textarea.selectAll();
+                    textarea.replaceSelection("");
                     textarea.append(texto.getTexto());
                 }
                 if (texto.getTipo().equals("jugadores")) {
@@ -129,10 +132,18 @@ public class Cliente extends JFrame implements ActionListener {
                 }
 
             } catch (IOException ioe) {
-                System.out.println("Servidor cerrado");
+                System.out.println("Servidor cerrado\n" + ioe.getMessage());
             } catch (ClassNotFoundException cnfe) {
                 System.out.println("ERROR DE CLASE:\n" + cnfe.getMessage());
             }
+        }
+        try {
+            fsalida.close();
+            fentrada.close();
+            socket.close();
+            System.exit(0);
+        } catch (IOException ioe) {
+            System.out.println("ERROR\n" + ioe.getMessage());
         }
 
     }
@@ -160,14 +171,7 @@ public class Cliente extends JFrame implements ActionListener {
                 msg = new Mensaje("exit", nombre);
                 fsalida.writeObject(msg);
                 repetir = false;
-                try {
-                    fsalida.close();
-                    fentrada.close();
-                    socket.close();
-                    System.exit(0);
-                } catch (IOException ioe) {
-                    System.out.println("ERROR\n" + ioe.getMessage());
-                }
+
             } catch (IOException ioe) {
                 System.out.println("ERROR:\n" + ioe.getMessage());
             }
@@ -188,7 +192,6 @@ public class Cliente extends JFrame implements ActionListener {
                 try {
                     msg = new Mensaje(nombre, respuesta);
                     fsalida.writeObject(msg);
-
                 } catch (IOException ioe) {
                     System.out.println("ERROR:\n" + ioe.getMessage());
 
