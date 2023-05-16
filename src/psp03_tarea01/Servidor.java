@@ -96,7 +96,9 @@ public class Servidor extends JFrame implements ActionListener {
     }
 
     public static void ejecutar() throws IOException {
-        servidor = new ServerSocket(PUERTO);
+        if (servidor == null) {
+            servidor = new ServerSocket(PUERTO);
+        }
 
         while (repeat) {
             Socket s = new Socket();
@@ -158,7 +160,7 @@ public class Servidor extends JFrame implements ActionListener {
             jugadores = 0;
             hilos.clear();
             actualizarLista();
-            
+
             ejecutar();
         }
 
@@ -244,5 +246,9 @@ public class Servidor extends JFrame implements ActionListener {
         gbc = new GridBagConstraints(gridx, gridy, gridwidth, gridheight, gridweightx, gridweighty,
                 anchor, fill, new Insets(5, 5, 5, 5), 0, 0);
         return gbc;
+    }
+    
+    public static ArrayList<Jugador> getLista(){
+        return listajugadores;
     }
 }

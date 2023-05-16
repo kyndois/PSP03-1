@@ -176,7 +176,7 @@ public class Cliente extends JFrame implements ActionListener {
                 jugadoresActivos.add(new JLabel(s));
             }
         }
-
+        jugadoresActivos.repaint();
     }
 
     public void winner(String name) {
@@ -193,7 +193,7 @@ public class Cliente extends JFrame implements ActionListener {
                 jugadoresActivos.add(new JLabel(s));
             }
         }
-        
+        jugadoresActivos.repaint();
     }
 
     @Override

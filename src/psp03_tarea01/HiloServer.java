@@ -4,7 +4,6 @@ import java.awt.Color;
 import java.io.*;
 import java.net.*;
 import java.util.ArrayList;
-import javax.swing.JOptionPane;
 
 public class HiloServer extends Thread {
 
@@ -36,7 +35,6 @@ public class HiloServer extends Thread {
                 if (mensaje.getTipo().equals("enter")) {
                     Servidor.nuevoJugador(mensaje.getTexto(), socket);
                     Servidor.textarea.append("**** El jugador " + mensaje.getTexto() + " ha entrado al juego ****\n");
-                    EnviarMensaje("historial");
                     EnviarMensaje("jugadores");
 
                 } else if (mensaje.getTipo().equals("exit")) {
@@ -66,10 +64,10 @@ public class HiloServer extends Thread {
                     } else {
                         Servidor.textarea.append("---Servidor" + " -> " + respuesta + " es mayor que el número oculto!\n");
                     }
-                    EnviarMensaje("historial");
-                    EnviarMensaje("jugadores");
-                }
 
+                }
+                    EnviarMensaje("historial");
+                    
             } catch (IOException ioe) {
                 System.out.println("ERROR al recibir de Cliente:\n" + ioe.getMessage());
                     if(fentrada!=null){repeat =false;}
@@ -83,7 +81,7 @@ public class HiloServer extends Thread {
     private void EnviarMensaje(String s) {
         ArrayList<String> lista = new ArrayList<>();
         try {
-            for (Jugador j : Servidor.listajugadores) {
+            for (Jugador j : Servidor.getLista()) {
                 fsalida = j.getStream();
                 lista.add(j.getName());
                 if (s.equals("historial")) {
