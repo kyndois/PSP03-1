@@ -23,7 +23,7 @@ public class HiloServer extends Thread {
     }
 
     public void run() {
-        String text = Servidor.textarea.getText();
+        
 
         while (repeat) {
             int respuesta = -1;
