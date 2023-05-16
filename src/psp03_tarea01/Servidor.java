@@ -97,9 +97,7 @@ public class Servidor extends JFrame implements ActionListener {
     }
 
     public static void ejecutar() throws IOException {
-        if (servidor == null) {
-            servidor = new ServerSocket(PUERTO);
-        }
+        servidor = new ServerSocket(PUERTO);
 
         while (repeat) {
             Socket s = new Socket();
@@ -119,6 +117,7 @@ public class Servidor extends JFrame implements ActionListener {
         }
         if (!servidor.isClosed())
         try {
+
             servidor.close();
 
         } catch (IOException ex) {
@@ -188,7 +187,7 @@ public class Servidor extends JFrame implements ActionListener {
         } catch (IOException ioe) {
             System.out.println("ERROR en nuevoJugador:\n" + ioe.getMessage());
         }
-        
+
     }
 
     public static void saleJugador(String s1) {
@@ -221,7 +220,7 @@ public class Servidor extends JFrame implements ActionListener {
         }
         jugadoresActivos.revalidate();
         jugadoresActivos.repaint();
-        
+
     }
 
     public static void winner(String name) {
@@ -256,7 +255,7 @@ public class Servidor extends JFrame implements ActionListener {
 
     public static ArrayList<String> getLista() {
         ArrayList<String> lista = new ArrayList<>();
-        for(Jugador j : listajugadores){
+        for (Jugador j : listajugadores) {
             lista.add(j.getName());
         }
         return lista;
