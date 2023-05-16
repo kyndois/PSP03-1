@@ -22,22 +22,22 @@ public class Cliente extends JFrame implements ActionListener {
     static JPanel jugadoresActivos;
     JButton enviar = new JButton("Enviar");
     JButton salir = new JButton("Salir");
-    JButton limpiar = new JButton("Limpiar");
     boolean repetir = true;
     ArrayList<String> listajugadores = new ArrayList<>();
 
     public Cliente(Socket s, String nombre) {
-
         super("JUGADOR: " + nombre);
+        setMinimumSize(new Dimension(600, 600));
         setSize(800, 600);
         setVisible(true);
         addWindowListener(exitListener);
         setLayout(new GridBagLayout());
-        socket = s;
+        this.socket = s;
         this.nombre = nombre;
 
         jugadoresActivos = new JPanel();
         jugadoresActivos.setLayout(new BoxLayout(jugadoresActivos, BoxLayout.Y_AXIS));
+        actualizarLista(listajugadores);
         scroll2 = new JScrollPane(jugadoresActivos);
 
         add(mensaje,
@@ -117,18 +117,24 @@ public class Cliente extends JFrame implements ActionListener {
                     textarea.append(texto.getTexto());
                 }
                 if (texto.getTipo().equals("jugadores")) {
-                    listajugadores = texto.getLista();
-                    actualizarLista(listajugadores);
+
+                    actualizarLista(texto.getLista());
                 }
                 if (texto.getTipo().equals("winner")) {
                     winner(texto.getTexto());
-                    textarea.setBackground(Color.red);
+                    if (texto.getTexto().equals(nombre)) {
+                        textarea.setBackground(Color.green);
+                    } else {
+                        textarea.setBackground(Color.red);
+                    }
                     JOptionPane.showConfirmDialog(null, "¡TENEMOS GANADOR!\nFELICIADES " + texto.getTexto());
                     repetir = false;
                 }
 
             } catch (IOException ioe) {
                 System.out.println("Servidor cerrado\n" + ioe.getMessage());
+                JOptionPane.showMessageDialog(null, "Se ha perdido la conexión", "Desconectado", JOptionPane.ERROR_MESSAGE);
+                System.exit(0);
             } catch (ClassNotFoundException cnfe) {
                 System.out.println("ERROR DE CLASE:\n" + cnfe.getMessage());
             }
@@ -144,38 +150,14 @@ public class Cliente extends JFrame implements ActionListener {
 
     }
 
-
-    private GridBagConstraints addConstraints(int gridx, int gridy, int gridwidth, int gridheight, int anchor, int fill, double gridweightx, double gridweighty) {
-        gbc = new GridBagConstraints(gridx, gridy, gridwidth, gridheight, gridweightx, gridweighty,
-                anchor, fill, new Insets(5, 5, 5, 5), 0, 0);
-        return gbc;
-    }
-
-
-    WindowListener exitListener = new WindowAdapter() {
-
-        @Override
-        public void windowClosing(WindowEvent e) {
-            try {
-                msg = new Mensaje("exit", nombre);
-                fsalida.writeObject(msg);
-                repetir = false;
-
-            } catch (IOException ioe) {
-                System.out.println("ERROR:\n" + ioe.getMessage());
-            }
-        }
-    };
-
     public void actualizarLista(ArrayList<String> lista) {
         jugadoresActivos.removeAll();
-        jugadoresActivos.add(new JLabel("JUGADORES: " + listajugadores.size()));
+        jugadoresActivos.add(new JLabel("JUGADORES: " + lista.size()));
         jugadoresActivos.add(new JLabel("--------------------------"));
-        if (!listajugadores.isEmpty()) {
-            for (String s : listajugadores) {
-                jugadoresActivos.add(new JLabel(s));
-            }
+        for (String s : lista) {
+            jugadoresActivos.add(new JLabel(s));
         }
+        jugadoresActivos.revalidate();
         jugadoresActivos.repaint();
     }
 
@@ -193,6 +175,7 @@ public class Cliente extends JFrame implements ActionListener {
                 jugadoresActivos.add(new JLabel(s));
             }
         }
+        jugadoresActivos.revalidate();
         jugadoresActivos.repaint();
     }
 
@@ -231,4 +214,25 @@ public class Cliente extends JFrame implements ActionListener {
             }
         }
     }
+
+    private GridBagConstraints addConstraints(int gridx, int gridy, int gridwidth, int gridheight, int anchor, int fill, double gridweightx, double gridweighty) {
+        gbc = new GridBagConstraints(gridx, gridy, gridwidth, gridheight, gridweightx, gridweighty,
+                anchor, fill, new Insets(5, 5, 5, 5), 0, 0);
+        return gbc;
+    }
+
+    WindowListener exitListener = new WindowAdapter() {
+
+        @Override
+        public void windowClosing(WindowEvent e) {
+            try {
+                msg = new Mensaje("exit", nombre);
+                fsalida.writeObject(msg);
+                repetir = false;
+
+            } catch (IOException ioe) {
+                System.out.println("ERROR:\n" + ioe.getMessage());
+            }
+        }
+    };
 }

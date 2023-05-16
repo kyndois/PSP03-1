@@ -3,10 +3,9 @@ package psp03_tarea01;
 import java.awt.Color;
 import java.io.*;
 import java.net.*;
-import java.util.ArrayList;
 
 public class HiloServer extends Thread {
-
+    
     Mensaje mensaje;
     ObjectInputStream fentrada;
     ObjectOutputStream fsalida;
@@ -79,15 +78,13 @@ public class HiloServer extends Thread {
     }
 
     private void EnviarMensaje(String s) {
-        ArrayList<String> lista = new ArrayList<>();
         try {
-            for (Jugador j : Servidor.getLista()) {
+            for (Jugador j : Servidor.listajugadores) {
                 fsalida = j.getStream();
-                lista.add(j.getName());
                 if (s.equals("historial")) {
                     mensaje = new Mensaje("historial", Servidor.textarea.getText());
                 } else if (s.equals("jugadores")) {
-                    mensaje = new Mensaje("jugadores", lista);
+                    mensaje = new Mensaje("jugadores", Servidor.getLista());
                 } else {
                     mensaje = new Mensaje("winner", s);
                 }

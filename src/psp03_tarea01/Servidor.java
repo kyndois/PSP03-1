@@ -31,7 +31,7 @@ public class Servidor extends JFrame implements ActionListener {
     static JScrollPane scroll2;
     static JPanel jugadoresActivos;
     static JTextArea textarea;
-    static JPanel textarea2;
+    static JPanel panelNumero;
     JButton salir = new JButton("Salir");
     JButton limpiar = new JButton("Limpiar");
     static ArrayList<Jugador> listajugadores = new ArrayList<>();
@@ -39,6 +39,7 @@ public class Servidor extends JFrame implements ActionListener {
 
     public Servidor() {
         super("SERVIDOR");
+        setMinimumSize(new Dimension(400, 400));
         setSize(800, 600);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new GridBagLayout());
@@ -50,7 +51,7 @@ public class Servidor extends JFrame implements ActionListener {
                         1.0, 0.0));
 
         salir.addActionListener(this);
-        salir.setPreferredSize(new Dimension(100, 30));
+        salir.setPreferredSize(new Dimension(110, 30));
         add(salir,
                 addConstraints(2, 0, 1, 1, GridBagConstraints.NORTH, GridBagConstraints.NONE,
                         0.0, 0.0));
@@ -58,17 +59,17 @@ public class Servidor extends JFrame implements ActionListener {
         textarea = new JTextArea();
         textarea.setEditable(false);
         scroll = new JScrollPane(textarea);
-        add(textarea,
+        add(scroll,
                 addConstraints(0, 1, 1, 3, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
                         1.0, 1.0));
 
-        textarea2 = new JPanel();
-        textarea2.setLayout(new GridLayout(2, 1));
-        textarea2.add(new JLabel("Número a adivinar:"));
+        panelNumero = new JPanel();
+        panelNumero.setLayout(new GridLayout(2, 1));
+        panelNumero.add(new JLabel("Número a adivinar:"));
         number.setFont(new Font("Times New Roman", Font.BOLD, 24));
-        textarea2.add(number);
+        panelNumero.add(number);
 
-        add(textarea2,
+        add(panelNumero,
                 addConstraints(2, 1, 2, 1, GridBagConstraints.CENTER, GridBagConstraints.NONE,
                         0.0, 0.0));
 
@@ -82,7 +83,7 @@ public class Servidor extends JFrame implements ActionListener {
                         0.0, 1.0));
 
         limpiar.addActionListener(this);
-        limpiar.setPreferredSize(new Dimension(100, 30));
+        limpiar.setPreferredSize(new Dimension(110, 30));
         add(limpiar,
                 addConstraints(2, 3, 1, 1, GridBagConstraints.SOUTH, GridBagConstraints.NONE,
                         0.0, 0.0));
@@ -113,7 +114,6 @@ public class Servidor extends JFrame implements ActionListener {
 
             jugadores++;
             HiloServer hilo = new HiloServer(s);
-            hilos.add(hilo);
             hilo.start();
 
         }
@@ -172,9 +172,11 @@ public class Servidor extends JFrame implements ActionListener {
             Jugador jugador = new Jugador(s, oos);
 
             int repetido = 0;
-            for (Jugador s1 : listajugadores) {
-                if (s == s1.getName()) {
-                    repetido++;
+            if (!listajugadores.isEmpty()) {
+                for (Jugador s1 : listajugadores) {
+                    if (s == s1.getName()) {
+                        repetido++;
+                    }
                 }
             }
             if (repetido != 0) {
@@ -186,6 +188,7 @@ public class Servidor extends JFrame implements ActionListener {
         } catch (IOException ioe) {
             System.out.println("ERROR en nuevoJugador:\n" + ioe.getMessage());
         }
+        
     }
 
     public static void saleJugador(String s1) {
@@ -216,7 +219,9 @@ public class Servidor extends JFrame implements ActionListener {
                 jugadoresActivos.add(new JLabel(s.getName()));
             }
         }
+        jugadoresActivos.revalidate();
         jugadoresActivos.repaint();
+        
     }
 
     public static void winner(String name) {
@@ -233,6 +238,7 @@ public class Servidor extends JFrame implements ActionListener {
             }
             jugadoresActivos.add(winner);
         }
+        jugadoresActivos.revalidate();
         jugadoresActivos.repaint();
         JOptionPane.showMessageDialog(null, "¡TENEMOS GANADOR!\n\nGanador: " + name);
         try {
@@ -247,8 +253,12 @@ public class Servidor extends JFrame implements ActionListener {
                 anchor, fill, new Insets(5, 5, 5, 5), 0, 0);
         return gbc;
     }
-    
-    public static ArrayList<Jugador> getLista(){
-        return listajugadores;
+
+    public static ArrayList<String> getLista() {
+        ArrayList<String> lista = new ArrayList<>();
+        for(Jugador j : listajugadores){
+            lista.add(j.getName());
+        }
+        return lista;
     }
 }
