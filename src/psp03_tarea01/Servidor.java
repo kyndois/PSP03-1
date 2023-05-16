@@ -13,8 +13,6 @@ import java.io.ObjectOutputStream;
 import java.net.*;
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.swing.*;
 
 public class Servidor extends JFrame implements ActionListener {
@@ -23,10 +21,10 @@ public class Servidor extends JFrame implements ActionListener {
 
     static ServerSocket servidor;
     static final int PUERTO = 2000;
-    static final int NUMERO = (int) (Math.random() * 100);
+    static int NUMERO = (int) (Math.random() * 100);
     static int INTENTOS = 0;
     static int jugadores = 0;
-
+    static boolean repeat = true;
     static JLabel number = new JLabel(String.valueOf(NUMERO));
     static JTextField numJugadores = new JTextField();
     static JScrollPane scroll;
@@ -35,9 +33,9 @@ public class Servidor extends JFrame implements ActionListener {
     static JTextArea textarea;
     static JPanel textarea2;
     JButton salir = new JButton("Salir");
-    static Socket[] tabla = new Socket[100];
-    static Object[][] tablacoms = new Object[100][100];
+    JButton limpiar = new JButton("Limpiar");
     static ArrayList<Jugador> listajugadores = new ArrayList<>();
+    static ArrayList<Thread> hilos = new ArrayList<>();
 
     public Servidor() {
         super("SERVIDOR");
@@ -61,7 +59,7 @@ public class Servidor extends JFrame implements ActionListener {
         textarea.setEditable(false);
         scroll = new JScrollPane(textarea);
         add(textarea,
-                addConstraints(0, 1, 1, 2, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
+                addConstraints(0, 1, 1, 3, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
                         1.0, 1.0));
 
         textarea2 = new JPanel();
@@ -83,35 +81,46 @@ public class Servidor extends JFrame implements ActionListener {
                 addConstraints(2, 2, 2, 1, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
                         0.0, 1.0));
 
+        limpiar.addActionListener(this);
+        limpiar.setPreferredSize(new Dimension(100, 30));
+        add(limpiar,
+                addConstraints(2, 3, 1, 1, GridBagConstraints.SOUTH, GridBagConstraints.NONE,
+                        0.0, 0.0));
+
     }
 
     public static void main(String[] args) throws IOException {
-
-        servidor = new ServerSocket(PUERTO);
         Servidor display = new Servidor();
         display.setVisible(true);
+        ejecutar();
+    }
 
-        while (true) {
+    public static void ejecutar() throws IOException {
+        servidor = new ServerSocket(PUERTO);
+
+        while (repeat) {
             Socket s = new Socket();
 
             try {
                 s = servidor.accept();
 
             } catch (Exception e) {
-                System.out.println("ERROR:\n" + e.getMessage());
+                System.out.println("ERROR al esperar Cliente:\n" + e.getMessage());
                 break;
             }
 
             jugadores++;
             HiloServer hilo = new HiloServer(s);
+            hilos.add(hilo);
             hilo.start();
 
         }
         if (!servidor.isClosed())
         try {
             servidor.close();
+
         } catch (IOException ex) {
-            System.out.println("ERROR:\n" + ex.getMessage());
+            System.out.println("ERROR al Cerrar Servidor:\n" + ex.getMessage());
         }
     }
 
@@ -121,10 +130,38 @@ public class Servidor extends JFrame implements ActionListener {
             try {
                 servidor.close();
             } catch (IOException ex) {
-                System.out.println("ERROR:\n" + ex.getMessage());
+                System.out.println("ERROR al Salir:\n" + ex.getMessage());
             }
             System.exit(0);
         }
+        if (e.getSource().equals(limpiar)) {
+            textarea.selectAll();
+            textarea.replaceSelection("");
+        }
+    }
+
+    public static void reiniciar() throws IOException {
+        int reiniciar = JOptionPane.showConfirmDialog(null, "¿Reiniciar?");
+        repeat = false;
+        if (reiniciar != 0) {
+            System.exit(0);
+        } else {
+            textarea.selectAll();
+            textarea.replaceSelection("");
+            textarea.setBackground(Color.WHITE);
+            INTENTOS = 0;
+            numJugadores.setForeground(Color.black);
+            numJugadores.setText("NUMERO DE INTENTOS: " + INTENTOS);
+            NUMERO = (int) (Math.random() * 100);
+            number.setText(String.valueOf(NUMERO));
+            listajugadores.clear();
+            jugadores = 0;
+            hilos.clear();
+            actualizarLista();
+            
+            ejecutar();
+        }
+
     }
 
     public static void nuevoJugador(String s, Socket o) {
@@ -145,26 +182,24 @@ public class Servidor extends JFrame implements ActionListener {
             listajugadores.add(jugador);
             actualizarLista();
         } catch (IOException ioe) {
-            System.out.println("ERROR:\n" + ioe.getMessage());
+            System.out.println("ERROR en nuevoJugador:\n" + ioe.getMessage());
         }
     }
 
     public static void saleJugador(String s1) {
         Iterator it = listajugadores.iterator();
         Jugador jugador;
-        while (it.hasNext()) {
-            jugador = (Jugador) it.next();
-            String name = jugador.getName();
-            if (name.equals(s1)) {
-                try {
-                    jugador.getStream().close();
-                } catch (IOException ex) {
-                    System.out.println("loquenado");
+        if (listajugadores.size() == 1) {
+            listajugadores.remove(0);
+        } else {
+            while (it.hasNext()) {
+                jugador = (Jugador) it.next();
+                String name = jugador.getName();
+                if (name.equals(s1)) {
+                    it.remove();
+                    break;
                 }
-                it.remove();
-                break;
             }
-            System.out.println("Ohosdg");
         }
         jugadores--;
         actualizarLista();
@@ -174,27 +209,35 @@ public class Servidor extends JFrame implements ActionListener {
         jugadoresActivos.removeAll();
         jugadoresActivos.add(new JLabel("JUGADORES: " + jugadores));
         jugadoresActivos.add(new JLabel("--------------------------"));
-        for (Jugador s : listajugadores) {
-            jugadoresActivos.add(new JLabel(s.getName()));
+        if (!listajugadores.isEmpty()) {
+            for (Jugador s : listajugadores) {
+                jugadoresActivos.add(new JLabel(s.getName()));
+            }
         }
         jugadoresActivos.repaint();
     }
 
     public static void winner(String name) {
+        textarea.setBackground(Color.red);
         jugadoresActivos.removeAll();
-        jugadoresActivos.add(new JLabel("JUGADORES:"));
+        jugadoresActivos.add(new JLabel("JUGADORES:" + jugadores));
         jugadoresActivos.add(new JLabel("--------------------------"));
         for (Jugador s : listajugadores) {
-            if (s.equals(name)) {
-                JLabel winner = new JLabel(name);
+            JLabel winner = new JLabel(s.getName());
+            if (s.getName().equals(name)) {
                 winner.setForeground(Color.WHITE);
                 winner.setOpaque(true);
                 winner.setBackground(Color.red);
-            } else {
-                jugadoresActivos.add(new JLabel(s.getName()));
             }
+            jugadoresActivos.add(winner);
         }
         jugadoresActivos.repaint();
+        JOptionPane.showMessageDialog(null, "¡TENEMOS GANADOR!\n\nGanador: " + name);
+        try {
+            reiniciar();
+        } catch (IOException ex) {
+            System.out.println("ERROR al reiniciar:\n" + ex.getMessage());
+        }
     }
 
     private GridBagConstraints addConstraints(int gridx, int gridy, int gridwidth, int gridheight, int anchor, int fill, double gridweightx, double gridweighty) {

@@ -22,6 +22,7 @@ public class Cliente extends JFrame implements ActionListener {
     static JPanel jugadoresActivos;
     JButton enviar = new JButton("Enviar");
     JButton salir = new JButton("Salir");
+    JButton limpiar = new JButton("Limpiar");
     boolean repetir = true;
     ArrayList<String> listajugadores = new ArrayList<>();
 
@@ -43,7 +44,7 @@ public class Cliente extends JFrame implements ActionListener {
                 addConstraints(0, 0, 1, 1, GridBagConstraints.NORTH, GridBagConstraints.HORIZONTAL,
                         1.0, 0.0));
         enviar.addActionListener(this);
-        enviar.setPreferredSize(new Dimension(100, 30));
+        enviar.setPreferredSize(new Dimension(110, 30));
         add(enviar,
                 addConstraints(1, 0, 1, 1, GridBagConstraints.NORTH, GridBagConstraints.NONE,
                         0.0, 0.0));
@@ -55,16 +56,14 @@ public class Cliente extends JFrame implements ActionListener {
                         1.0, 2.0));
 
         salir.addActionListener(this);
-        salir.setPreferredSize(new Dimension(100, 30));
+        salir.setPreferredSize(new Dimension(110, 30));
         add(salir,
                 addConstraints(1, 1, 1, 1, GridBagConstraints.NORTH, GridBagConstraints.NONE,
                         0.0, 0.0));
 
-        add(jugadoresActivos,
-                addConstraints(1, 2, 1, 1, GridBagConstraints.NORTH, GridBagConstraints.NONE,
-                        0.0, 0.0));
-
-        repaint();
+        add(scroll2,
+                addConstraints(1, 2, 1, 1, GridBagConstraints.NORTH, GridBagConstraints.BOTH,
+                        0.0, 1.0));
 
         try {
 
@@ -122,8 +121,10 @@ public class Cliente extends JFrame implements ActionListener {
                     actualizarLista(listajugadores);
                 }
                 if (texto.getTipo().equals("winner")) {
-                    listajugadores = texto.getLista();
-                    actualizarLista(listajugadores);
+                    winner(texto.getTexto());
+                    textarea.setBackground(Color.red);
+                    JOptionPane.showConfirmDialog(null, "¡TENEMOS GANADOR!\nFELICIADES " + texto.getTexto());
+                    repetir = false;
                 }
 
             } catch (IOException ioe) {
@@ -143,21 +144,14 @@ public class Cliente extends JFrame implements ActionListener {
 
     }
 
+
     private GridBagConstraints addConstraints(int gridx, int gridy, int gridwidth, int gridheight, int anchor, int fill, double gridweightx, double gridweighty) {
         gbc = new GridBagConstraints(gridx, gridy, gridwidth, gridheight, gridweightx, gridweighty,
                 anchor, fill, new Insets(5, 5, 5, 5), 0, 0);
         return gbc;
     }
 
-    public void actualizarLista(ArrayList<String> lista) {
-        jugadoresActivos.removeAll();
-        jugadoresActivos.add(new JLabel("JUGADORES: " + lista.size()));
-        jugadoresActivos.add(new JLabel("--------------------------"));
-        for (String s : lista) {
-            jugadoresActivos.add(new JLabel(s));
-        }
-        jugadoresActivos.repaint();
-    }
+
     WindowListener exitListener = new WindowAdapter() {
 
         @Override
@@ -172,6 +166,35 @@ public class Cliente extends JFrame implements ActionListener {
             }
         }
     };
+
+    public void actualizarLista(ArrayList<String> lista) {
+        jugadoresActivos.removeAll();
+        jugadoresActivos.add(new JLabel("JUGADORES: " + listajugadores.size()));
+        jugadoresActivos.add(new JLabel("--------------------------"));
+        if (!listajugadores.isEmpty()) {
+            for (String s : listajugadores) {
+                jugadoresActivos.add(new JLabel(s));
+            }
+        }
+
+    }
+
+    public void winner(String name) {
+        jugadoresActivos.removeAll();
+        jugadoresActivos.add(new JLabel("JUGADORES:" + listajugadores.size()));
+        jugadoresActivos.add(new JLabel("--------------------------"));
+        for (String s : listajugadores) {
+            if (s.equals(name)) {
+                JLabel winner = new JLabel(name);
+                winner.setForeground(Color.WHITE);
+                winner.setOpaque(true);
+                winner.setBackground(Color.red);
+            } else {
+                jugadoresActivos.add(new JLabel(s));
+            }
+        }
+        
+    }
 
     @Override
     public void actionPerformed(ActionEvent e) {
